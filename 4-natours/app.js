@@ -180,18 +180,44 @@ console.log(`app running listen port ${port}`)
 
 const express = require('express')
 const morgan = require('morgan')
-
+const rateLimit = require('express-rate-limit') 
+const helmet = require('helmet')
 const AppError =  require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController')
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const mongoSanitize = require('express-mongo-sanitize')
+const xss = require('xss-clean')
+const hpp = require('hpp')
+
 
 const app = express()
 
+app.use(helmet())
 if(process.env.NODE_ENV === 'development'){
     app.use(morgan('dev')) // 3. part ara yazılım
 }
-app.use(express.json()) // gelen isteklerdeki verileri kullanmamıza yarayan ara yazılım
+
+// aynı IP içinde bir saatlik izin
+const limiter = rateLimit({
+    max: 100,
+    windowMs : 60*60*1000,
+    message : 'too many requests'
+})
+
+app.use('/api' , limiter) // sadece api ile olanları etkilesin diye
+
+// 10 kb üstü veriler kabul edilmeyecek
+app.use(express.json({limit : `10kb`})) // gelen isteklerdeki verileri kullanmamıza yarayan ara yazılım
+// verileri okuduktan sonra veri temizliği yapılacak
+// veri alırken noSQL sorgusu ile manipüle edilebilir
+app.use(mongoSanitize()) // genel olarak işaretleri filtreliyor
+
+app.use(xss()) // kötü amaçlı html i temizler
+
+app.use(hpp({
+    whitelist:['duration' , 'ratingsQuantity','ratingsAverage', 'maxGroupSize', 'difficulty','price']
+})) //parametre sorunlarını önler
 
 app.use(express.static(`${__dirname}/public`))
 app.use((req, res, next) => {
