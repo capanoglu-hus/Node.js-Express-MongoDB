@@ -2,7 +2,7 @@ const express = require('express')
 const tourController = require('./../controllers/tourController')
 const router = express.Router();
 const authController = require('./../controllers/authController')
-
+const reviewRouter = require('./reviewRoutes')
 
 
 
@@ -91,15 +91,28 @@ const createTour = (req ,res) =>{
 
 // router.param('id', tourController.checkId)
 router.route('/tour-stats').get(tourController.getTourStats)
-router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan)
+router.route('/monthly-plan/:year').get(authController.protect , authController.restrictTo('admin','lead-guide','guide'),tourController.getMonthlyPlan)
 router.route('/top-5-cheap').get(tourController.aliasTopTours , tourController.getAllTours)
 
-router.route('/').get(authController.protect, tourController.getAllTours).post( tourController.createTour) 
+router.route('/tours-within/:distance/center/:latlng/unit/:unit').get(tourController.getTourWithin)
+// /tours-within/233/center/-40,45/unit/mi
+
+router.route('/distance/:latlng/unit/:unit').get(tourController.getDistances)
+// /distance/-40,45/unit/mi
+
+router.route('/')
+    .get(tourController.getAllTours)
+    .post( authController.protect , authController.restrictTo('admin','lead-guide'), tourController.createTour) 
 
 router.route('/:id')
     .get(tourController.getTour)
-    .patch(tourController.updatedTour)
-    .delete(authController.protect , authController.restrictTo('admin'), tourController.deleteTour)
+    .patch(authController.protect , authController.restrictTo('admin','lead-guide'), tourController.updatedTour)
+    .delete(authController.protect , authController.restrictTo('admin','lead-guide'), tourController.deleteTour)
 
+
+// review kısmında da aynı şeyleri yapıyoruz o yüzden iki routerı birleştiriyor   
+//router.route('/:tourId/reviews').post(authController.protect , authController.restrictTo('user') , reviewController.createReview)
+router.use('/:tourId/reviews' , reviewRouter)
+// iç içe urllerde kullanılır  /tours/toursid/reviews gibi
 module.exports = router;
 
