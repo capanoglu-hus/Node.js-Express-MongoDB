@@ -7,7 +7,7 @@ const Review = require('../../models/reviewModel');
 
 dotenv.config({path: `./config.env`})
 
-const DB = `mongodb+srv://husniye:nodejsmongoDB33@cluster0.eoz1pew.mongodb.net/natours?retryWrites=true&w=majority&appName=Cluster0`//process.env.DATABASE.replace(`<PASSWORD>` , process.env.DATABASE_PASSWORD)
+const DB = `******`//process.env.DATABASE.replace(`<PASSWORD>` , process.env.DATABASE_PASSWORD)
 mongoose.connect(DB ,{
     useNewUrlParser: true,
     useCreateIndex : true,
